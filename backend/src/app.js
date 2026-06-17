@@ -21,8 +21,11 @@ const app = express();
 // middleware global
 app.use(express.json());
 app.use(cors({
-  origin: true,
-  credentials: true
+  origin: [
+    "http://localhost:3000",
+    "https://premku.vercel.app"
+  ],
+  credentials: true,
 }));
 app.use(helmet());
 app.use(morgan("dev"));

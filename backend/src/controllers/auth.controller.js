@@ -3,14 +3,13 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { generateToken } = require("../utils/jwt");
 
-/* =========================
-   COOKIE CONFIG (GLOBAL STYLE)
-========================= */
+const isProduction = process.env.NODE_ENV === "production";
+
 const cookieOptions = {
   httpOnly: true,
-  secure: false, // set true kalau HTTPS production
-  sameSite: "lax",
-  path: "/", // 🔥 IMPORTANT BIAR BISA DI-DELETE
+  secure: isProduction,
+  sameSite: isProduction ? "none" : "lax",
+  path: "/",
 };
 
 /* =========================
@@ -21,8 +20,11 @@ exports.register = async (req, res) => {
     const { name, email, password } = req.body;
 
     const existing = await User.findOne({ email });
+
     if (existing) {
-      return res.status(400).json({ message: "Email already used" });
+      return res.status(400).json({
+        message: "Email already used",
+      });
     }
 
     const hashed = await bcrypt.hash(password, 10);
@@ -37,7 +39,7 @@ exports.register = async (req, res) => {
 
     res.cookie("token", token, cookieOptions);
 
-    res.json({
+    return res.status(201).json({
       user: {
         id: user._id,
         name: user.name,
@@ -47,7 +49,11 @@ exports.register = async (req, res) => {
       token,
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+
+    return res.status(500).json({
+      message: err.message,
+    });
   }
 };
 
@@ -59,20 +65,26 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
+
     if (!user) {
-      return res.status(400).json({ message: "User not found" });
+      return res.status(400).json({
+        message: "User not found",
+      });
     }
 
     const match = await bcrypt.compare(password, user.password);
+
     if (!match) {
-      return res.status(400).json({ message: "Wrong password" });
+      return res.status(400).json({
+        message: "Wrong password",
+      });
     }
 
     const token = generateToken(user);
 
     res.cookie("token", token, cookieOptions);
 
-    res.json({
+    return res.status(200).json({
       user: {
         id: user._id,
         name: user.name,
@@ -82,30 +94,36 @@ exports.login = async (req, res) => {
       token,
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+
+    return res.status(500).json({
+      message: err.message,
+    });
   }
 };
 
 /* =========================
-   LOGOUT (FIXED)
+   LOGOUT
 ========================= */
 exports.logout = (req, res) => {
   res.clearCookie("token", cookieOptions);
 
-  res.json({
+  return res.json({
     message: "Logged out successfully",
   });
 };
 
 /* =========================
-   ME (AUTH CHECK)
+   ME
 ========================= */
 exports.me = async (req, res) => {
   try {
     const token = req.cookies.token;
 
     if (!token) {
-      return res.status(401).json({ message: "Unauthenticated" });
+      return res.status(401).json({
+        message: "Unauthenticated",
+      });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -113,11 +131,17 @@ exports.me = async (req, res) => {
     const user = await User.findById(decoded.id).select("-password");
 
     if (!user) {
-      return res.status(401).json({ message: "User not found" });
+      return res.status(401).json({
+        message: "User not found",
+      });
     }
 
-    res.json({ user });
+    return res.json({
+      user,
+    });
   } catch (err) {
-    res.status(401).json({ message: "Invalid token" });
+    return res.status(401).json({
+      message: "Invalid token",
+    });
   }
 };
