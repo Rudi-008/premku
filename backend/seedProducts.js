@@ -44,17 +44,15 @@ const products = [
 
 const seedProducts = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    await mongoose.connect(process.env.MONGODB_URL);
 
-    console.log("Connected to DB");
+    console.log("✅ Connected to MongoDB");
 
     for (const p of products) {
-      const exists = await Product.findOne({
-        name: p.name,
-      });
+      const exists = await Product.findOne({ name: p.name });
 
       if (exists) {
-        console.log(`Skipped (exists): ${p.name}`);
+        console.log(`⏭️ Skipped (exists): ${p.name}`);
         continue;
       }
 
@@ -66,13 +64,13 @@ const seedProducts = async () => {
         isActive: true,
       });
 
-      console.log(`Inserted: ${p.name}`);
+      console.log(`✅ Inserted: ${p.name}`);
     }
 
-    console.log("Seeding completed");
+    console.log("🎉 Seeding completed");
     process.exit(0);
   } catch (err) {
-    console.error("Seed error:", err);
+    console.error("❌ Seed error:", err);
     process.exit(1);
   }
 };

@@ -2,13 +2,15 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 require("dotenv").config();
 
-const User = require("./src/models/User"); // sesuaikan path kalau beda
+const User = require("./src/models/User");
 
 const seedAdmin = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    await mongoose.connect(process.env.MONGODB_URL);
 
-    const existingAdmin = await User.findOne({ email: "admin@premku.com" });
+    const existingAdmin = await User.findOne({
+      email: "admin@premku.com",
+    });
 
     if (existingAdmin) {
       console.log("Admin already exists");
@@ -24,7 +26,7 @@ const seedAdmin = async () => {
       role: "admin",
     });
 
-    console.log("Admin created successfully:", admin.email);
+    console.log("✅ Admin created successfully:", admin.email);
 
     process.exit(0);
   } catch (err) {
